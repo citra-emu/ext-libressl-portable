@@ -262,20 +262,11 @@ endif()
 
 set(OPENSSL_LIBS tls ssl crypto)
 
+# Add additional required libs
 if(WIN32)
 	set(OPENSSL_LIBS ${OPENSSL_LIBS} ws2_32)
 endif()
-
-check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
-if(HAVE_CLOCK_GETTIME)
-	add_definitions(-DHAVE_CLOCK_GETTIME)
-endif()
-
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-	check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
-	if (HAVE_CLOCK_GETTIME)
-		set(OPENSSL_LIBS ${OPENSSL_LIBS} rt)
-	endif()
 	set(OPENSSL_LIBS ${OPENSSL_LIBS} pthread)
 endif()
 if(CMAKE_SYSTEM_NAME MATCHES "HP-UX")
@@ -283,6 +274,20 @@ if(CMAKE_SYSTEM_NAME MATCHES "HP-UX")
 endif()
 if(CMAKE_SYSTEM_NAME MATCHES "SunOS")
 	set(OPENSSL_LIBS ${OPENSSL_LIBS} nsl socket)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+	# Check if we need -lrt to get clock_gettime on Linux
+	check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+	if (HAVE_CLOCK_GETTIME)
+		set(OPENSSL_LIBS ${OPENSSL_LIBS} rt)
+	endif()
+else()
+	# Otherwise, simply check if it exists
+	check_function_exists(clock_gettime HAVE_CLOCK_GETTIME)
+endif()
+if(HAVE_CLOCK_GETTIME)
+	add_definitions(-DHAVE_CLOCK_GETTIME)
 endif()
 
 check_type_size(time_t SIZEOF_TIME_T)
